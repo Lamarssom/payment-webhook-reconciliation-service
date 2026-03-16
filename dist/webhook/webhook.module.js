@@ -8,10 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WebhookModule = void 0;
 const common_1 = require("@nestjs/common");
+const typeorm_1 = require("@nestjs/typeorm");
+const webhook_controller_1 = require("./webhook.controller");
+const webhook_service_1 = require("./webhook.service");
+const payment_event_entity_1 = require("./entities/payment-event.entity");
 let WebhookModule = class WebhookModule {
 };
 exports.WebhookModule = WebhookModule;
 exports.WebhookModule = WebhookModule = __decorate([
-    (0, common_1.Module)({})
+    (0, common_1.Module)({
+        imports: [typeorm_1.TypeOrmModule.forFeature([payment_event_entity_1.PaymentEvent])],
+        controllers: [webhook_controller_1.WebhookController],
+        providers: [webhook_service_1.WebhookService],
+        exports: [webhook_service_1.WebhookService],
+    })
 ], WebhookModule);
 //# sourceMappingURL=webhook.module.js.map
