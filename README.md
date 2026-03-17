@@ -1,42 +1,31 @@
 # Payment Webhook & Reconciliation Service
 
-Production-ready webhook handler for Paystack & Flutterwave  
-Built with NestJS + TypeScript, TypeORM (PostgreSQL), Redis (BullMQ), and full audit logging.
+Production-ready webhook handler for Paystack  
+Built with NestJS + TypeScript + TypeORM (PostgreSQL) + @nestjs/schedule.
 
-Handles incoming webhooks with idempotency protection, background reconciliation jobs, atomic transaction updates, and daily reports. Perfect for fintech wallets, e-commerce, or subscription platforms.
+Handles incoming webhooks with HMAC verification, idempotency protection, atomic event storage, and daily reconciliation jobs.
 
 ## Features
-- Secure webhook endpoints (Paystack + Flutterwave)
-- Idempotency checks using reference + SHA256 hash
-- Automatic event storage + processing
-- BullMQ background jobs for reconciliation & retries
-- Atomic balance updates via PostgreSQL transactions
-- Full audit logging
+- Secure Paystack webhook endpoint with SHA512 HMAC validation
+- Idempotency using unique reference + database check
+- Full audit logging in payment_events table
+- Daily cron reconciliation job (2 AM) for pending events
 - Swagger API documentation
-- Docker + GitHub Actions CI/CD ready
-- Unit + integration tests (Jest)
+- Clean, testable architecture (ready for wallet balance updates)
 
 ## Tech Stack
 - NestJS + TypeScript
 - TypeORM + PostgreSQL
-- Redis + BullMQ
+- @nestjs/schedule (cron jobs)
 - Swagger
-- Class-validator + Class-transformer
-- Crypto-js (idempotency)
+- Crypto (HMAC)
 
-## Live Demo
-(Will be deployed to Render/Vercel after completion)
-
-## Project Links
-- GitHub: https://github.com/Lamarssom/payment-webhook-reconciliation-service
-- Postman Collection: (will be added)
+## API Documentation
 - Swagger: /api (when running locally)
 
 ## Quick Start
 ```bash
 npm install
-cp .env.example .env
-# Add your Paystack/Flutterwave secret keys + DB credentials
 npm run start:dev
 
-Built as part of my mid-level backend portfolio (2026). 
+Built as part of my backend portfolio (2026). 
