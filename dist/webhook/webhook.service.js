@@ -52,6 +52,7 @@ const typeorm_2 = require("typeorm");
 const payment_event_entity_1 = require("./entities/payment-event.entity");
 const crypto = __importStar(require("crypto"));
 const config_1 = require("@nestjs/config");
+const schedule_1 = require("@nestjs/schedule");
 let WebhookService = class WebhookService {
     paymentEventRepo;
     configService;
@@ -92,8 +93,30 @@ let WebhookService = class WebhookService {
         await this.paymentEventRepo.save(paymentEvent);
         return { status: 'success', message: 'Webhook processed successfully' };
     }
+    async reconcilePendingPayments() {
+        console.log('🔄 Running daily reconciliation job...');
+        const pending = await this.paymentEventRepo.find({
+            where: { processed: false },
+        });
+        if (pending.length === 0) {
+            console.log('✅ No pending events to reconcile');
+            return;
+        }
+        pending.forEach((event) => {
+            event.processed = true;
+            event.status = 'reconciled_manually';
+        });
+        await this.paymentEventRepo.save(pending);
+        console.log(`✅ Reconciled ${pending.length} pending events`);
+    }
 };
 exports.WebhookService = WebhookService;
+__decorate([
+    (0, schedule_1.Cron)(schedule_1.CronExpression.EVERY_DAY_AT_2AM),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], WebhookService.prototype, "reconcilePendingPayments", null);
 exports.WebhookService = WebhookService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(payment_event_entity_1.PaymentEvent)),

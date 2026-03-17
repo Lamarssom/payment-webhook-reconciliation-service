@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { PaymentEvent } from './entities/payment-event.entity';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 type PaystackWebhookBody = {
   event: string;
@@ -24,7 +25,7 @@ export class WebhookService {
   async handlePaystackWebhook(body: PaystackWebhookBody, signature: string) {
     const secret = this.configService.get<string>('PAYSTACK_SECRET_KEY');
 
-    // HMAC verification (Paystack standard)
+    // HMAC verification
     const hash = crypto
       .createHmac('sha512', secret!)
       .update(JSON.stringify(body))
@@ -41,16 +42,13 @@ export class WebhookService {
       throw new BadRequestException('Missing reference');
     }
 
-    // Idempotency check
     const existing = await this.paymentEventRepo.findOne({
       where: { reference },
     });
-
     if (existing) {
       return { status: 'already_processed' };
     }
 
-    // Save raw event
     const paymentEvent = this.paymentEventRepo.create({
       reference,
       event,
@@ -60,11 +58,34 @@ export class WebhookService {
     });
     await this.paymentEventRepo.save(paymentEvent);
 
-    // Basic processing (expand later for wallet updates)
     paymentEvent.processed = true;
     paymentEvent.status = event === 'charge.success' ? 'success' : 'failed';
     await this.paymentEventRepo.save(paymentEvent);
 
     return { status: 'success', message: 'Webhook processed successfully' };
+  }
+
+  // ────── RECONCILIATION CRON JOB ──────
+  @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  async reconcilePendingPayments() {
+    console.log('🔄 Running daily reconciliation job...');
+
+    const pending = await this.paymentEventRepo.find({
+      where: { processed: false },
+    });
+
+    if (pending.length === 0) {
+      console.log('✅ No pending events to reconcile');
+      return;
+    }
+
+    // In a real app you would call Paystack verify endpoint here
+    pending.forEach((event) => {
+      event.processed = true;
+      event.status = 'reconciled_manually';
+    });
+
+    await this.paymentEventRepo.save(pending);
+    console.log(`✅ Reconciled ${pending.length} pending events`);
   }
 }

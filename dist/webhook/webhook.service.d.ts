@@ -19,5 +19,6 @@ export declare class WebhookService {
         status: string;
         message: string;
     }>;
+    reconcilePendingPayments(): Promise<void>;
 }
 export {};
